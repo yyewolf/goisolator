@@ -6,7 +6,9 @@ import (
 	"goisolator/internal/labels"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,6 +26,11 @@ func ContainerName(cn string) string {
 func DoIsolationAtoB(container types.ContainerJSON) {
 	labels := labels.MapToLabels(container.Config.Labels)
 	logrus.Debugf("Labels: %+v", labels)
+
+	if labels.Ignore {
+		logrus.Debugf("Container %s ignored", container.ID)
+		return
+	}
 
 	if len(labels.LinkTo) == 0 {
 		logrus.Debugf("No links found, skipping...")
@@ -68,6 +75,12 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 func DoIsolationBtoA(container types.ContainerJSON) {
 	// Check if any container are linked to this container
 	// If so, link them
+	labels := labels.MapToLabels(container.Config.Labels)
+	logrus.Debugf("Labels: %+v", labels)
+	if labels.Ignore {
+		logrus.Debugf("Container %s ignored", container.ID)
+		return
+	}
 
 	for _, c := range cache {
 		labels := labels.MapToLabels(c.Config.Labels)
@@ -139,9 +152,40 @@ func NetworkAtoB(a, b string) (string, error) {
 }
 
 func LinkAandB(a, b types.ContainerJSON, nw string) error {
-	// Add network to A and B
-	err1 := cli.NetworkConnect(context.Background(), nw, a.ID, nil)
+	//Add network to B
 	err2 := cli.NetworkConnect(context.Background(), nw, b.ID, nil)
+	err := cli.NetworkConnect(context.Background(), nw, a.ID, nil)
+	if err != nil {
+		return err
+	}
+
+	a, err = cli.ContainerInspect(context.Background(), a.ID)
+	if err != nil {
+		return err
+	}
+
+	err = cli.ContainerStop(context.Background(), a.ID, container.StopOptions{
+		Signal: "SIGKILL",
+	})
+	if err != nil {
+		return err
+	}
+	err = cli.ContainerRemove(context.Background(), a.ID, types.ContainerRemoveOptions{
+		Force: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Recreate A with same config
+	nwc := a.NetworkSettings.Networks
+	var conf = &network.NetworkingConfig{
+		EndpointsConfig: nwc,
+	}
+
+	a.Config.Labels["goisolator.ignore"] = "true"
+
+	_, err1 := cli.ContainerCreate(context.Background(), a.Config, a.HostConfig, conf, nil, a.Name)
 
 	// Make sure containers can communicate using
 
