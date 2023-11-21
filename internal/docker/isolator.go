@@ -185,6 +185,11 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 
 	a.Config.Labels["goisolator.ignore"] = "true"
 
+	lbl := labels.MapToLabels(a.Config.Labels)
+	if lbl.Traefik {
+		a.Config.Labels["traefik.enable"] = "true"
+	}
+
 	_, err1 := cli.ContainerCreate(context.Background(), a.Config, a.HostConfig, conf, nil, a.Name)
 
 	// Make sure containers can communicate using

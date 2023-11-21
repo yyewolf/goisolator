@@ -3,8 +3,9 @@ package labels
 import "strings"
 
 type Labels struct {
-	Ignore bool     `json:"goisolator.ignore"`
-	LinkTo []string `json:"goisolator.linkto"`
+	Traefik bool     `json:"goisolator.traefik"`
+	Ignore  bool     `json:"goisolator.ignore"`
+	LinkTo  []string `json:"goisolator.linkto"`
 }
 
 func MapToLabels(labels map[string]string) Labels {
@@ -14,6 +15,9 @@ func MapToLabels(labels map[string]string) Labels {
 	}
 	if _, ok := labels["goisolator.ignore"]; ok {
 		l.Ignore = true
+	}
+	if _, ok := labels["goisolator.traefik"]; ok {
+		l.Traefik = true
 	}
 	return l
 }
