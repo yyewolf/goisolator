@@ -110,8 +110,8 @@ func NetworkAtoB(a, b string) error {
 		Attachable:     true,
 		Labels: map[string]string{
 			"goisolator":   "true",
-			"goisolator.a": a,
-			"goisolator.b": b,
+			"goisolator.a": ContainerName(a),
+			"goisolator.b": ContainerName(b),
 		},
 	})
 	if err != nil {
