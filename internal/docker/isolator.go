@@ -49,8 +49,13 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 		}
 
 		// Create network (doesn't do anything if already exists)
-		NetworkAtoB(container.Name, link)
-		err := LinkAandB(container, c2)
+		id, err := NetworkAtoB(container.Name, link)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+
+		err = LinkAandB(container, c2, id)
 		if err != nil {
 			logrus.Error(err)
 			continue
@@ -75,8 +80,12 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 
 		for _, link := range labels.LinkTo {
 			if link == ContainerName(container.Name) {
-				NetworkAtoB(c.Name, container.Name)
-				err := LinkAandB(c, container)
+				id, err := NetworkAtoB(c.Name, container.Name)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				err = LinkAandB(c, container, id)
 				if err != nil {
 					logrus.Error(err)
 					continue
@@ -88,7 +97,7 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 	}
 }
 
-func NetworkAtoB(a, b string) error {
+func NetworkAtoB(a, b string) (string, error) {
 	// Make sure the network exists
 	// If not, create it
 	networkName := fmt.Sprintf("goisolator+%s+%s", ContainerName(a), ContainerName(b))
@@ -99,20 +108,20 @@ func NetworkAtoB(a, b string) error {
 		Filters: args,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, network := range networks {
 		logrus.Debugf("Found network: %s", network.Name)
 		if network.Name == networkName {
 			logrus.Debugf("Network %s found", networkName)
-			return nil
+			return network.ID, nil
 		}
 	}
 
 	logrus.Debugf("Network %s not found, creating...", networkName)
 	// Make sure the two containers will be able to communicate
-	_, err = cli.NetworkCreate(context.Background(), networkName, types.NetworkCreate{
+	resp, err := cli.NetworkCreate(context.Background(), networkName, types.NetworkCreate{
 		CheckDuplicate: true,
 		Driver:         "bridge",
 		Attachable:     true,
@@ -123,39 +132,16 @@ func NetworkAtoB(a, b string) error {
 		},
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return resp.ID, nil
 }
 
-func LinkAandB(a, b types.ContainerJSON) error {
-	// Make sure the network exists
-	// If not, create it
-	networkName := fmt.Sprintf("goisolator+%s+%s", ContainerName(a.Name), ContainerName(b.Name))
-
-	args := filters.NewArgs(filters.Arg("label", "goisolator"))
-
-	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{
-		Filters: args,
-	})
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	nw := types.NetworkResource{}
-
-	for _, network := range networks {
-		if network.Name == networkName {
-			logrus.Debugf("Network %s found", networkName)
-			break
-		}
-		nw = network
-	}
-
+func LinkAandB(a, b types.ContainerJSON, nw string) error {
 	// Add network to A and B
-	err1 := cli.NetworkConnect(context.Background(), nw.ID, a.ID, nil)
-	err2 := cli.NetworkConnect(context.Background(), nw.ID, b.ID, nil)
+	err1 := cli.NetworkConnect(context.Background(), nw, a.ID, nil)
+	err2 := cli.NetworkConnect(context.Background(), nw, b.ID, nil)
 
 	// Make sure containers can communicate using
 
