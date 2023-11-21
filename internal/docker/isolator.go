@@ -179,8 +179,13 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 
 	// Recreate A with same config
 	nwc := a.NetworkSettings.Networks
-	var conf = &network.NetworkingConfig{
-		EndpointsConfig: nwc,
+	var conf = &network.NetworkingConfig{}
+	for k, v := range nwc {
+		conf.EndpointsConfig = map[string]*network.EndpointSettings{
+			k: {
+				NetworkID: v.NetworkID,
+			},
+		}
 	}
 
 	a.Config.Labels["goisolator.ignore"] = "true"
