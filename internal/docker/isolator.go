@@ -8,7 +8,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
 	"github.com/sirupsen/logrus"
 )
 
@@ -179,14 +178,6 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 
 	// Recreate A with same config
 	nwc := a.NetworkSettings.Networks
-	var conf = &network.NetworkingConfig{
-		EndpointsConfig: make(map[string]*network.EndpointSettings),
-	}
-	for k, v := range nwc {
-		conf.EndpointsConfig[k] = &network.EndpointSettings{
-			NetworkID: v.NetworkID,
-		}
-	}
 
 	a.Config.Labels["goisolator.ignore"] = "true"
 
@@ -195,7 +186,17 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 		a.Config.Labels["traefik.enable"] = "true"
 	}
 
-	_, err1 := cli.ContainerCreate(context.Background(), a.Config, a.HostConfig, conf, nil, a.Name)
+	resp, err1 := cli.ContainerCreate(context.Background(), a.Config, a.HostConfig, nil, nil, a.Name)
+	// Connect networks
+	for _, v := range nwc {
+		cli.NetworkConnect(context.Background(), v.NetworkID, resp.ID, nil)
+	}
+
+	// Start container
+	err = cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
 
 	// Make sure A is connected
 
