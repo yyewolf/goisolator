@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  registry:
+    image: registry:2
+    ports:
+      - 5000:5000
+    volumes:
+      - ./registry:/var/lib/registry
+      
+  test3:
+    image: localhost:5000/test:latest

@@ -1,0 +1,8 @@
+version: '3.7'
+
+services:
+  test2:
+    container_name: test2
+    image: localhost:5000/test:latest
+    labels:
+      - goisolator.linkto=test1
