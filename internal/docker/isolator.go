@@ -75,9 +75,9 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 func DoIsolationBtoA(container types.ContainerJSON) {
 	// Check if any container are linked to this container
 	// If so, link them
-	labels := labels.MapToLabels(container.Config.Labels)
-	logrus.Debugf("Labels: %+v", labels)
-	if labels.Ignore {
+	lbl := labels.MapToLabels(container.Config.Labels)
+	logrus.Debugf("Labels: %+v", lbl)
+	if lbl.Ignore {
 		logrus.Debugf("Container %s ignored", container.ID)
 		return
 	}
