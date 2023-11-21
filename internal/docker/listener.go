@@ -35,7 +35,7 @@ func StartListener() {
 					delete(cache, c.Name)
 
 					// Prune networks
-					cli.NetworksPrune(context.Background(), filters.NewArgs())
+					cli.NetworksPrune(context.Background(), filters.NewArgs(filters.Arg("label", "goisolator")))
 					break
 				}
 			}
