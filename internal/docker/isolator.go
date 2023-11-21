@@ -50,7 +50,11 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 
 		// Create network (doesn't do anything if already exists)
 		NetworkAtoB(container.Name, link)
-		LinkAandB(container, c2)
+		err := LinkAandB(container, c2)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
 		logrus.Infof("Linked %s to %s", container.Name, c2.Name)
 	}
 
@@ -72,7 +76,11 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 		for _, link := range labels.LinkTo {
 			if link == ContainerName(container.Name) {
 				NetworkAtoB(c.Name, container.Name)
-				LinkAandB(c, container)
+				err := LinkAandB(c, container)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
 
 				logrus.Infof("Linked %s to %s", c.Name, container.Name)
 			}
