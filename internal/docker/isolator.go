@@ -179,12 +179,12 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 
 	// Recreate A with same config
 	nwc := a.NetworkSettings.Networks
-	var conf = &network.NetworkingConfig{}
+	var conf = &network.NetworkingConfig{
+		EndpointsConfig: make(map[string]*network.EndpointSettings),
+	}
 	for k, v := range nwc {
-		conf.EndpointsConfig = map[string]*network.EndpointSettings{
-			k: {
-				NetworkID: v.NetworkID,
-			},
+		conf.EndpointsConfig[k] = &network.EndpointSettings{
+			NetworkID: v.NetworkID,
 		}
 	}
 
@@ -196,6 +196,8 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 	}
 
 	_, err1 := cli.ContainerCreate(context.Background(), a.Config, a.HostConfig, conf, nil, a.Name)
+
+	// Make sure A is connected
 
 	// Make sure containers can communicate using
 
