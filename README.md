@@ -4,8 +4,8 @@
     <a href="/LICENSE"><img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square"></a>
     <a href="https://codeclimate.com/github/yyewolf/goisolator/test_coverage"><img src="https://api.codeclimate.com/v1/badges/d9fcf617937d6026221f/test_coverage" /></a>
     <a href="https://codeclimate.com/github/yyewolf/goisolator/maintainability"><img src="https://api.codeclimate.com/v1/badges/d9fcf617937d6026221f/maintainability" /></a>
-    <a href="https://goreportcard.com/report/github.com/yyewolf/goisolator/backend"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/yyewolf/goisolator/backend"></a>
-    <a href="https://godoc.org/github.com/yyewolf/goisolator/backend"><img src="https://godoc.org/github.com/yyewolf/goisolator/backend?status.svg" alt="GoDoc"></a>
+    <a href="https://goreportcard.com/report/github.com/yyewolf/goisolator"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/yyewolf/goisolator"></a>
+    <a href="https://godoc.org/github.com/yyewolf/goisolator"><img src="https://godoc.org/github.com/yyewolf/goisolator/backend?status.svg" alt="GoDoc"></a>
   </p>
 </p>
 
