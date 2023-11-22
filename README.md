@@ -18,7 +18,7 @@
 You can use the docker pull command to fetch the latest version of Go Isolator from the GitHub Container Registry (ghcr.io):
 
 ```bash
-docker pull ghcr.io/yyewolf/goisolator:v1.0.9
+docker pull ghcr.io/yyewolf/goisolator
 ```
 
 # Usage
