@@ -26,11 +26,6 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 	labels := labels.MapToLabels(container.Config.Labels)
 	logrus.Debugf("Labels: %+v", labels)
 
-	if labels.Ignore {
-		logrus.Debugf("Container %s ignored", container.ID)
-		return
-	}
-
 	if len(labels.LinkTo) == 0 {
 		logrus.Debugf("No links found, skipping...")
 		return
@@ -73,6 +68,11 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 		logrus.Infof("Linked %s to %s", c2.Name, container.Name)
 	}
 
+	if labels.Ignore {
+		logrus.Debugf("Container %s ignored", container.ID)
+		return
+	}
+
 	err := LinkAToL(container, l)
 	if err != nil {
 		logrus.Error(err)
@@ -87,10 +87,6 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 	// If so, link them
 	lbl := labels.MapToLabels(container.Config.Labels)
 	logrus.Debugf("Labels: %+v", lbl)
-	if lbl.Ignore {
-		logrus.Debugf("Container %s ignored", container.ID)
-		return
-	}
 
 	for _, c := range cache {
 		labels := labels.MapToLabels(c.Config.Labels)
@@ -119,6 +115,11 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 
 				logrus.Infof("Linked %s to %s", container.Name, c.Name)
 			}
+		}
+
+		if labels.Ignore {
+			logrus.Debugf("Container %s ignored", container.ID)
+			continue
 		}
 
 		err := LinkAToL(c, l)
