@@ -36,6 +36,8 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 		return
 	}
 
+	var l []string
+
 	for _, link := range labels.LinkTo {
 		logrus.Debugf("Checking link from %s to %s", container.ID, link)
 
@@ -61,13 +63,22 @@ func DoIsolationAtoB(container types.ContainerJSON) {
 			continue
 		}
 
-		err = LinkAandB(container, c2, id)
+		l = append(l, id)
+
+		err = LinkBtoNetwork(c2, id)
 		if err != nil {
 			logrus.Error(err)
 			continue
 		}
-		logrus.Infof("Linked %s to %s", container.Name, c2.Name)
+		logrus.Infof("Linked %s to %s", c2.Name, container.Name)
 	}
+
+	err := LinkAToL(container, l)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	logrus.Infof("Linked %s to others", container.Name)
 
 }
 
@@ -90,6 +101,8 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 			continue
 		}
 
+		var l []string
+
 		for _, link := range labels.LinkTo {
 			if link == ContainerName(container.Name) {
 				id, err := NetworkAtoB(c.Name, container.Name)
@@ -97,15 +110,23 @@ func DoIsolationBtoA(container types.ContainerJSON) {
 					logrus.Error(err)
 					continue
 				}
-				err = LinkAandB(c, container, id)
+				l = append(l, id)
+				err = LinkBtoNetwork(c, id)
 				if err != nil {
 					logrus.Error(err)
 					continue
 				}
 
-				logrus.Infof("Linked %s to %s", c.Name, container.Name)
+				logrus.Infof("Linked %s to %s", container.Name, c.Name)
 			}
 		}
+
+		err := LinkAToL(c, l)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+		logrus.Infof("Linked %s to others", c.Name)
 	}
 }
 
@@ -150,12 +171,23 @@ func NetworkAtoB(a, b string) (string, error) {
 	return resp.ID, nil
 }
 
-func LinkAandB(a, b types.ContainerJSON, nw string) error {
+func LinkBtoNetwork(b types.ContainerJSON, nw string) error {
 	//Add network to B
-	err2 := cli.NetworkConnect(context.Background(), nw, b.ID, nil)
-	err := cli.NetworkConnect(context.Background(), nw, a.ID, nil)
+	err := cli.NetworkConnect(context.Background(), nw, b.ID, nil)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func LinkAToL(a types.ContainerJSON, nws []string) error {
+	var err error
+	for _, nw := range nws {
+		err = cli.NetworkConnect(context.Background(), nw, a.ID, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	a, err = cli.ContainerInspect(context.Background(), a.ID)
@@ -198,17 +230,5 @@ func LinkAandB(a, b types.ContainerJSON, nw string) error {
 		return err
 	}
 
-	// Make sure A is connected
-
-	// Make sure containers can communicate using
-
-	if err1 != nil {
-		return err1
-	}
-
-	if err2 != nil {
-		return err2
-	}
-
-	return nil
+	return err1
 }
