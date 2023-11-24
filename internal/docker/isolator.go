@@ -184,10 +184,7 @@ func LinkBtoNetwork(b types.ContainerJSON, nw string) error {
 func LinkAToL(a types.ContainerJSON, nws []string) error {
 	var err error
 	for _, nw := range nws {
-		err = cli.NetworkConnect(context.Background(), nw, a.ID, nil)
-		if err != nil {
-			return err
-		}
+		cli.NetworkConnect(context.Background(), nw, a.ID, nil)
 	}
 
 	a, err = cli.ContainerInspect(context.Background(), a.ID)
