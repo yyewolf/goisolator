@@ -6,7 +6,7 @@ RUN --mount=type=ssh go mod download && go mod verify
 COPY . .
 RUN go build -o /app/goisolator /app/cmd/main/main.go
 
-FROM alpine
+FROM scratch
 COPY --from=backend /app/goisolator .
 USER 1000
 ENTRYPOINT ["/goisolator"]

@@ -1,12 +1,8 @@
 version: '3.7'
 
 services:
-  registry:
-    image: registry:2
-    ports:
-      - 5000:5000
+  goisolator:
+    image: goisolator
+    user: 1000:952
     volumes:
-      - ./registry:/var/lib/registry
-      
-  test3:
-    image: localhost:5000/test:latest
+      - /var/run/docker.sock:/var/run/docker.sock
