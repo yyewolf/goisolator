@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -19,6 +20,16 @@ func init() {
 
 	logrus.Info("Docker client initialized")
 
+	Reconciliate()
+	t := time.NewTicker(10 * time.Minute)
+	go func() {
+		for range t.C {
+			Reconciliate()
+		}
+	}()
+}
+
+func Reconciliate() {
 	// Fill up containers
 	c, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {

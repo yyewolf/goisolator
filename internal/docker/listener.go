@@ -29,10 +29,10 @@ func StartListener() {
 			DoIsolationBtoA(container)
 		}
 		if event.Action == "destroy" {
-			for _, c := range cache {
-				if c.ID == event.ID {
-					logrus.Infof("Container destroyed: %s", c.Name)
-					delete(cache, c.Name)
+			for _, container := range cache {
+				if container.ID == event.ID {
+					logrus.Infof("Container destroyed: %s", container.Name)
+					delete(cache, container.Name)
 
 					// Prune networks
 					cli.NetworksPrune(context.Background(), filters.NewArgs(filters.Arg("label", "goisolator")))
