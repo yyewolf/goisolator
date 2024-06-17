@@ -23,10 +23,7 @@ func StartListener() {
 
 			logrus.Infof("Container found: %s", container.Name)
 
-			cache[container.Name] = container
-
-			DoIsolationAtoB(container)
-			DoIsolationBtoA(container)
+			Reconciliate()
 		}
 		if event.Action == "destroy" {
 			for _, container := range cache {
