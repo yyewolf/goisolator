@@ -23,6 +23,9 @@ func StartListener() {
 
 			logrus.Infof("Container found: %s", container.Name)
 
+			DoIsolationAtoB(container)
+			DoIsolationBtoA(container)
+
 			Reconciliate()
 		}
 		if event.Action == "destroy" {
