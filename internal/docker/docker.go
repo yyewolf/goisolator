@@ -54,7 +54,6 @@ func (svc *DockerService) ReconciliateLoop(ctx context.Context) {
 }
 
 func (svc *DockerService) Reconciliate(ctx context.Context) {
-	// Fill up containers
 	containerList, err := svc.client.ContainerList(ctx, container.ListOptions{})
 	if err != nil {
 		logrus.Fatal(err)
@@ -67,11 +66,6 @@ func (svc *DockerService) Reconciliate(ctx context.Context) {
 			continue
 		}
 	}
-
-	// for _, container := range svc.containers {
-	// 	svc.DoIsolationAtoB(container)
-	// 	svc.DoIsolationBtoA(container)
-	// }
 }
 
 func (svc *DockerService) AddContainer(ctx context.Context, id string) error {
