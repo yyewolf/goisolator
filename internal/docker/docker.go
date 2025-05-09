@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 )
@@ -55,7 +55,7 @@ func (svc *DockerService) ReconciliateLoop(ctx context.Context) {
 
 func (svc *DockerService) Reconciliate(ctx context.Context) {
 	// Fill up containers
-	containerList, err := svc.client.ContainerList(ctx, types.ContainerListOptions{})
+	containerList, err := svc.client.ContainerList(ctx, container.ListOptions{})
 	if err != nil {
 		logrus.Fatal(err)
 	}

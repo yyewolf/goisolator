@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 )
 
 type Container struct {
@@ -39,10 +40,10 @@ func (container *Container) GetNetworks() map[string]*Network {
 
 		output[networkName] = &Network{
 			For: link,
-			NetworkCreate: types.NetworkCreate{
-				CheckDuplicate: true,
-				Driver:         "bridge",
-				Attachable:     true,
+			CreateOptions: network.CreateOptions{
+				EnableIPv4: Opt(true),
+				Driver:     "bridge",
+				Attachable: true,
 				Labels: map[string]string{
 					"goisolator":           "true",
 					"goisolator.container": container.Name(),
@@ -56,3 +57,5 @@ func (container *Container) GetNetworks() map[string]*Network {
 
 	return output
 }
+
+func Opt[K any](v K) *K { return &v }

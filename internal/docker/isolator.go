@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"goisolator/internal/labels"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 )
 
@@ -23,7 +22,7 @@ func (svc *DockerService) RecreateContainer(ctx context.Context, c *Container) e
 	}
 
 	c.Recreation = true
-	err = svc.client.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{Force: true})
+	err = svc.client.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true})
 	if err != nil {
 		return fmt.Errorf("error removing the container: %w", err)
 	}
@@ -52,7 +51,7 @@ func (svc *DockerService) RecreateContainer(ctx context.Context, c *Container) e
 	}
 
 	// Start container
-	err = svc.client.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
+	err = svc.client.ContainerStart(context.Background(), resp.ID, container.StartOptions{})
 	if err != nil {
 		return fmt.Errorf("error starting the container: %w", err)
 	}

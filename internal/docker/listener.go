@@ -6,7 +6,6 @@ import (
 	"goisolator/internal/labels"
 	"io"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/sirupsen/logrus"
@@ -19,7 +18,7 @@ func (svc *DockerService) StartListener(ctx context.Context) {
 restartListen:
 	// Listen for new containers
 	// When a new container is created, call the function below
-	eventChan, errorChan := svc.client.Events(ctx, types.EventsOptions{})
+	eventChan, errorChan := svc.client.Events(ctx, events.ListOptions{})
 
 	for {
 		select {

@@ -4,27 +4,27 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/sirupsen/logrus"
 )
 
 type Network struct {
-	types.NetworkCreate
+	network.CreateOptions
 
 	NetworkID string
 	For       *Container
 }
 
-func (svc *DockerService) listDockerNetworks() (map[string]*types.NetworkResource, error) {
-	dockerNetworks, err := svc.client.NetworkList(context.Background(), types.NetworkListOptions{
+func (svc *DockerService) listDockerNetworks() (map[string]*network.Summary, error) {
+	dockerNetworks, err := svc.client.NetworkList(context.Background(), network.ListOptions{
 		Filters: filters.NewArgs(filters.Arg("label", "goisolator")),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	mappedDockerNetworks := make(map[string]*types.NetworkResource)
+	mappedDockerNetworks := make(map[string]*network.Summary)
 	for _, network := range dockerNetworks {
 		mappedDockerNetworks[network.Name] = &network
 	}
@@ -47,7 +47,7 @@ func (svc *DockerService) CreateContainerNetworks(ctx context.Context, container
 			continue
 		}
 
-		newDockerNetwork, err := svc.client.NetworkCreate(ctx, networkName, network.NetworkCreate)
+		newDockerNetwork, err := svc.client.NetworkCreate(ctx, networkName, network.CreateOptions)
 		if err != nil {
 			logrus.Errorf("Network %v creation failed: %v", networkName, err)
 			continue
