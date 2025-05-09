@@ -3,6 +3,7 @@ package labels
 import "strings"
 
 type Labels struct {
+	Enabled bool     `json:"goisolator"`
 	Traefik bool     `json:"goisolator.traefik"`
 	Ignore  bool     `json:"goisolator.ignore"`
 	LinkTo  []string `json:"goisolator.linkto"`
@@ -18,6 +19,9 @@ func MapToLabels(labels map[string]string) Labels {
 	}
 	if _, ok := labels["goisolator.traefik"]; ok {
 		l.Traefik = true
+	}
+	if _, ok := labels["goisolator"]; ok {
+		l.Enabled = true
 	}
 	return l
 }
