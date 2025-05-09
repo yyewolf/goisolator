@@ -3,4 +3,6 @@ version: '3.7'
 services:
   test1:
     container_name: test1
-    image: localhost:5000/test:latest
+    image: test
+    stop_grace_period: 0s
+  

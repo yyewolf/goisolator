@@ -2,43 +2,72 @@ package docker
 
 import (
 	"context"
+	"errors"
+	"goisolator/internal/labels"
+	"io"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/sirupsen/logrus"
 )
 
-func StartListener() {
+func (svc *DockerService) StartListener(ctx context.Context) {
+	svc.wg.Add(1)
+	defer svc.wg.Done()
+
+restartListen:
 	// Listen for new containers
 	// When a new container is created, call the function below
-	events, _ := cli.Events(context.Background(), types.EventsOptions{})
+	eventChan, errorChan := svc.client.Events(ctx, events.ListOptions{})
 
-	for event := range events {
-		if event.Action == "start" {
-			container, err := cli.ContainerInspect(context.Background(), event.ID)
-			if err != nil {
-				logrus.Error(err)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case err := <-errorChan:
+			logrus.Errorf("Got error from event handler: %v", err)
+			if errors.Is(err, io.EOF) {
+				goto restartListen
+			}
+			continue
+		case event := <-eventChan:
+			if event.Type != events.ContainerEventType {
 				continue
 			}
 
-			logrus.Infof("Container found: %s", container.Name)
+			switch event.Action {
+			case "start":
+				err := svc.AddContainer(ctx, event.ID)
+				if err != nil {
+					logrus.Errorf("Got error when adding container: %v", err)
+					continue
+				}
+			case "destroy":
+				for _, container := range svc.containers {
+					if event.ID != container.ID {
+						continue
+					}
 
-			DoIsolationAtoB(container)
-			DoIsolationBtoA(container)
+					if container.Recreation {
+						continue
+					}
 
-			Reconciliate()
-		}
-		if event.Action == "destroy" {
-			for _, container := range cache {
-				if container.ID == event.ID {
-					logrus.Infof("Container destroyed: %s", container.Name)
-					delete(cache, container.Name)
+					logrus.Infof("Container destroyed: %v", container.Name())
 
-					// Prune networks
-					cli.NetworksPrune(context.Background(), filters.NewArgs(filters.Arg("label", "goisolator")))
-					break
+					lbls := labels.MapToLabels(container.Config.Labels)
+					if !lbls.Enabled {
+						continue
+					}
+
+					delete(svc.containers, container.Name())
+
+					// Clean useless goisolator networks
+					svc.FetchContainerNetworks(ctx, container)
+					svc.DisconnectLinksFromNetwork(ctx, container)
+					svc.client.NetworksPrune(context.Background(), filters.NewArgs(filters.Arg("label", "goisolator")))
 				}
 			}
 		}
 	}
+
 }

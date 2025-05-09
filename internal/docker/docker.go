@@ -2,53 +2,86 @@ package docker
 
 import (
 	"context"
+	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 )
 
-var cli *client.Client
+type DockerService struct {
+	client *client.Client
 
-func init() {
-	var err error
-	cli, err = client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	containers map[string]*Container
 
+	wg sync.WaitGroup
+}
+
+func NewDockerService(cli *client.Client) *DockerService {
 	logrus.Info("Docker client initialized")
 
-	Reconciliate()
+	return &DockerService{
+		client:     cli,
+		containers: make(map[string]*Container),
+	}
+}
+
+func (svc *DockerService) Start(ctx context.Context) {
+	svc.ReconciliateLoop(ctx)
+	svc.StartListener(ctx)
+
+	svc.wg.Wait()
+}
+
+func (svc *DockerService) ReconciliateLoop(ctx context.Context) {
+	svc.wg.Add(1)
+	defer svc.wg.Done()
+
 	t := time.NewTicker(10 * time.Minute)
 	go func() {
-		for range t.C {
-			Reconciliate()
+		svc.Reconciliate(ctx)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				svc.Reconciliate(ctx)
+			}
 		}
 	}()
 }
 
-func Reconciliate() {
-	// Fill up containers
-	c, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+func (svc *DockerService) Reconciliate(ctx context.Context) {
+	containerList, err := svc.client.ContainerList(ctx, container.ListOptions{})
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	for _, container := range c {
-		logrus.Infof("Container found: %s", container.Names[0])
-
-		inspect, err := cli.ContainerInspect(context.Background(), container.ID)
+	for _, container := range containerList {
+		err := svc.AddContainer(ctx, container.ID)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("Reconciliation got error when adding container: %v", err)
+			continue
 		}
+	}
+}
 
-		cache[container.Names[0]] = inspect
+func (svc *DockerService) AddContainer(ctx context.Context, id string) error {
+	dockerContainer, err := svc.client.ContainerInspect(ctx, id)
+	if err != nil {
+		return err
 	}
 
-	for _, container := range cache {
-		DoIsolationAtoB(container)
-		DoIsolationBtoA(container)
+	container := &Container{
+		ContainerJSON: dockerContainer,
 	}
+
+	logrus.Infof("Container found: %s", container.Name())
+
+	svc.containers[container.Name()] = container
+
+	svc.regenerateGraph()
+	return svc.HandleContainer(ctx, container)
 }
